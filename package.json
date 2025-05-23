@@ -4,10 +4,25 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "build": "swc src -d dist",
+    "start": "node dist/index.js",
+    "dev": "node  --inspect -r @swc-node/register lib/service.ts",
+    "upload-shorts": "node-r @swc-node/register upload-service/upload-video.ts"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "packageManager": "pnpm@10.8.1"
+  "packageManager": "pnpm@10.8.1",
+  "devDependencies": {
+    "@swc-node/register": "^1.10.10",
+    "@swc/cli": "^0.7.7",
+    "@swc/core": "^1.11.24",
+    "@types/node": "^22.15.18",
+    "vitest": "^3.1.4"
+  },
+  "dependencies": {
+    "@google-cloud/local-auth": "^3.0.1",
+    "cli-progress": "^3.12.0",
+    "googleapis": "^148.0.0"
+  }
 }
