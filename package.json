@@ -6,7 +6,7 @@
   "scripts": {
     "build": "swc src -d dist",
     "start": "node dist/index.js",
-    "dev": "node  --inspect -r @swc-node/register lib/service.ts",
+    "dev": "node -r @swc-node/register lib/service.ts",
     "upload-shorts": "node-r @swc-node/register upload-service/upload-video.ts"
   },
   "keywords": [],

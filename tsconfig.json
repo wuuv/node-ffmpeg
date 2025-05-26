@@ -6,10 +6,9 @@
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
-    "baseUrl": "./lib",
-    "paths": {
-      "*": ["*"]
-    }
+    // "paths": {
+    //   "@service": ["./lib/service/"]
+    // }
   },
   "include": ["lib"]
 }
