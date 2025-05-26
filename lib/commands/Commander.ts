@@ -2,7 +2,7 @@ import {Bin} from '../service/bin';
 
 export default class Commander {
   constructor(
-    protected service: Bin
+    protected readonly bin: Bin
   ) {}
 
   protected prepareArgs(args: any): string[] {
@@ -11,7 +11,7 @@ export default class Commander {
 
   async exec(args: any) {
     try {
-      await this.service.run(this.prepareArgs(args));
+      return await this.bin.run(this.prepareArgs(args));
     } catch (err) {
       if (Number.isInteger(err)) {
         throw new Error();

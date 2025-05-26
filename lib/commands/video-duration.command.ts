@@ -9,8 +9,4 @@ export default class VideoDurationCommand extends Commander {
       args.input
     ]
   }
-
-  async exec(args: {input: string}) {
-    return this.service.run(this.prepareArgs(args));
-  }
 }

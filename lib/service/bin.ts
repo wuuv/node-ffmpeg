@@ -46,16 +46,16 @@ class FFMpeg extends Bin {
     super(binPath);
   }
 
-  private parseStdout(output: string) {
-    return output.split(/\s+/)
-    .filter(part => part.includes('='))
-    .reduce<Record<string, string>>((acc, part) => {
-      const [key, value] = part.split('=');
-      const oKey = key.trim();
-      acc[oKey] = value.trim();
-      return acc;
-    }, {});
-  }
+  // private parseStdout(output: string) {
+  //   return output.split(/\s+/)
+  //   .filter(part => part.includes('='))
+  //   .reduce<Record<string, string>>((acc, part) => {
+  //     const [key, value] = part.split('=');
+  //     const oKey = key.trim();
+  //     acc[oKey] = value.trim();
+  //     return acc;
+  //   }, {});
+  // }
 
   protected override addStdoutEventListeners(process: ChildProcessWithoutNullStreams) {
     process.stdout.on('data', (chunk) => {
