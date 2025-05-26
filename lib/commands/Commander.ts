@@ -13,6 +13,7 @@ export default class Commander {
     try {
       return await this.bin.run(this.prepareArgs(args));
     } catch (err) {
+      // throw Error(err);
       if (Number.isInteger(err)) {
         throw new Error();
       }

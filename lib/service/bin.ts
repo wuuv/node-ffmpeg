@@ -1,5 +1,6 @@
 import { EventEmitter } from "node:stream";
 import { ChildProcessWithoutNullStreams, spawn } from 'node:child_process';
+import ErrorFactory from "./Errors";
 // import ProgressBar from './ProgressBar';
 import path from "node:path";
 
@@ -12,31 +13,64 @@ abstract class Bin {
 
   }
 
-  async run (args: any) {
-    return new Promise<void>((res, rej) => {
+  async run(args: any) {
+    return new Promise<any | never>((res, rej) => {
       const process = spawn(this.bin, args);
+      process.stderr.setEncoding('utf-8');
+      process.stdout.setEncoding('utf-8');
+      const stderrMessages: Array<string> = [];
+      const stdoutMessages: Array<string> = [];
       [
         this.addProcessEventListeners,
         this.addStdoutEventListeners,
+        this.addStderrEventListeners,
       ].forEach(fn => fn.call(this, process));
-      this.eventEmitter.on('data', console.log);
-      this.eventEmitter.on('error', console.error);
-      this.eventEmitter.on('finish:success', res);
-      this.eventEmitter.on('finish:error', rej);
+      this.eventEmitter.on('close', (code) => {
+        if (stderrMessages.length) {
+          const Error = ErrorFactory.matchError(stderrMessages);
+          rej(Error)
+        } else {
+          res(stdoutMessages);
+        }
+      });
+      this.eventEmitter.on('stderr:data', v => stderrMessages.push(v));
+      this.eventEmitter.on('stdout:data', v => stdoutMessages.push(v))
     })
   }
 
-  private addProcessEventListeners (process: ChildProcessWithoutNullStreams) {
+  private addProcessEventListeners(process: ChildProcessWithoutNullStreams) {
     process.on('close', (code) => {
-      if (code === 0) {
-        this.eventEmitter.emit('finish:success');
-      } else {
-        this.eventEmitter.emit('finish:error', code)
+      this.eventEmitter.emit('close', code);
+    });
+  }
+
+  private addStdoutEventListeners(process: ChildProcessWithoutNullStreams) {
+    process.stdout.on('data', data => {
+      const str = data.toString().trim();
+      this.eventEmitter.emit('stdout:data', str);
+    })
+
+  }
+
+  private addStderrEventListeners(process: ChildProcessWithoutNullStreams) {
+    process.stderr.on('data', (buffer) => {
+      const v = this.parseStderr(buffer)
+      if (v) {
+        this.eventEmitter.emit('stderr:data', v);
       }
     });
   }
 
-  protected abstract addStdoutEventListeners (process: ChildProcessWithoutNullStreams): void
+  private parseStderr(error: string) {
+    return error.split(/\r\n|\r|\n/g).reduce((messages, message) => {
+      if (message.charAt(0) === ' ' || message.charAt(0) === '[') {
+        return [];
+      } else {
+        messages.push(message.trim());
+        return messages;
+      }
+    }, [] as Array<string>).join('');
+  }
 }
 
 
@@ -45,45 +79,12 @@ class FFMpeg extends Bin {
     const binPath = path.join(__dirname, '../../bin/ffmpeg');
     super(binPath);
   }
-
-  // private parseStdout(output: string) {
-  //   return output.split(/\s+/)
-  //   .filter(part => part.includes('='))
-  //   .reduce<Record<string, string>>((acc, part) => {
-  //     const [key, value] = part.split('=');
-  //     const oKey = key.trim();
-  //     acc[oKey] = value.trim();
-  //     return acc;
-  //   }, {});
-  // }
-
-  protected override addStdoutEventListeners(process: ChildProcessWithoutNullStreams) {
-    process.stdout.on('data', (chunk) => {
-      console.log(chunk);
-      const str = chunk.toString();
-      console.log(str);
-    })
-    process.stdout.on('error', (chunk) => {
-      const str = chunk.toString();
-      console.log(str);
-    })
-  }
 }
 
 class FFProbe extends Bin {
   constructor() {
     const binPath = path.join(__dirname, '../../bin/ffprobe');
     super(binPath);
-  }
-
-  protected addStdoutEventListeners(process: ChildProcessWithoutNullStreams) {
-    process.stdout.on('data', (chunk) => {
-      const str = chunk.toString();
-      this.eventEmitter.emit('finish:success', str);
-    })
-    process.stdout.on('error', (chunk) => {
-      const str = chunk.toString();
-    })
   }
 }
 
