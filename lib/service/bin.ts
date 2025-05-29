@@ -1,6 +1,6 @@
 import { EventEmitter } from "node:stream";
 import { ChildProcessWithoutNullStreams, spawn } from 'node:child_process';
-import ErrorFactory from "./Errors";
+import ErrorFactory from "./errors";
 // import ProgressBar from './ProgressBar';
 import path from "node:path";
 
@@ -25,21 +25,22 @@ abstract class Bin {
         this.addStdoutEventListeners,
         this.addStderrEventListeners,
       ].forEach(fn => fn.call(this, process));
+      this.eventEmitter.on('stderr:data', v => stderrMessages.push(v));
+      this.eventEmitter.on('stdout:data', v => stdoutMessages.push(v));
       this.eventEmitter.on('close', (code) => {
+        console.log(stderrMessages, stdoutMessages);
         if (stderrMessages.length) {
-          const Error = ErrorFactory.matchError(stderrMessages);
-          rej(Error)
+          const BinError = ErrorFactory.matchError(stderrMessages);
+          rej(BinError);
         } else {
           res(stdoutMessages);
         }
       });
-      this.eventEmitter.on('stderr:data', v => stderrMessages.push(v));
-      this.eventEmitter.on('stdout:data', v => stdoutMessages.push(v))
     })
   }
 
   private addProcessEventListeners(process: ChildProcessWithoutNullStreams) {
-    process.on('close', (code) => {
+    process.on('exit', (code, signal) => {
       this.eventEmitter.emit('close', code);
     });
   }
@@ -47,6 +48,7 @@ abstract class Bin {
   private addStdoutEventListeners(process: ChildProcessWithoutNullStreams) {
     process.stdout.on('data', data => {
       const str = data.toString().trim();
+      console.log('stdout', str)
       this.eventEmitter.emit('stdout:data', str);
     })
 
@@ -54,9 +56,10 @@ abstract class Bin {
 
   private addStderrEventListeners(process: ChildProcessWithoutNullStreams) {
     process.stderr.on('data', (buffer) => {
-      const v = this.parseStderr(buffer)
-      if (v) {
-        this.eventEmitter.emit('stderr:data', v);
+      const parsed = this.parseStderr(buffer)
+      console.log('stderr', parsed)
+      if (parsed) {
+        this.eventEmitter.emit('stderr:data', parsed);
       }
     });
   }
@@ -85,6 +88,15 @@ class FFProbe extends Bin {
   constructor() {
     const binPath = path.join(__dirname, '../../bin/ffprobe');
     super(binPath);
+  }
+
+  async run(args: any): Promise<any> {
+    try {
+      const result = await super.run(args);
+      return result[0];
+    } catch (err) {
+      throw err;
+    }
   }
 }
 
