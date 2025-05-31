@@ -10,14 +10,6 @@ export default class Commander {
   }
 
   async exec(args: any) {
-    try {
-      return await this.bin.run(this.prepareArgs(args));
-    } catch (err) {
-      console.log(err)
-      if (Number.isInteger(err)) {
-        throw new Error();
-      }
-      throw new Error();
-    }
+    await this.bin.run(this.prepareArgs(args));
   }
 }

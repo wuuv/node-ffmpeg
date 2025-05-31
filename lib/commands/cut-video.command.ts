@@ -5,11 +5,13 @@ interface CutVideoCommandParams {
   start: string,
   duration: string
   output: string
+  overwrite?: boolean
 }
 
 export default class CutVideoCommand extends Commander {
   protected prepareArgs(args: CutVideoCommandParams) {
     return [
+      args.overwrite ? '-y' : '-n',
       '-i', args.input,
       '-ss', args.start,
       '-t', args.duration,
