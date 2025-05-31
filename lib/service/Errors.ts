@@ -16,6 +16,14 @@ export class FileAlreadyExists extends Error {
   }
 }
 
+export class NoFileOrDirecotry extends Error {
+  constructor() {
+    super(
+      'no such file or directory'
+    )
+  }
+}
+
 
 export default class ErrorFactory {
   private static errors: Array<Error> = [
@@ -25,8 +33,7 @@ export default class ErrorFactory {
   static matchError(errorMessages: string[]): Error {
     for (const message of errorMessages) {
       for (const error of this.errors) {
-        console.log(error.message);
-        if (message.includes(error.message)) {
+        if (message.includes(error.message.toLowerCase())) {
           return error;
         }
       }

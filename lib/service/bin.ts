@@ -1,12 +1,16 @@
 import { EventEmitter } from "node:stream";
 import { ChildProcessWithoutNullStreams, spawn } from 'node:child_process';
 import ErrorFactory from "./errors";
-// import ProgressBar from './ProgressBar';
 import path from "node:path";
 
 
 abstract class Bin {
   protected eventEmitter = new EventEmitter();
+  private readonly arguments = [
+    "-loglevel",
+    "error",
+    "-hide_banner",
+  ]
   constructor(
     private readonly bin: string,
   ) {
@@ -15,7 +19,7 @@ abstract class Bin {
 
   async run(args: any) {
     return new Promise<any | never>((res, rej) => {
-      const process = spawn(this.bin, args);
+      const process = spawn(this.bin, this.arguments.concat(args));
       process.stderr.setEncoding('utf-8');
       process.stdout.setEncoding('utf-8');
       const stderrMessages: Array<string> = [];
@@ -28,7 +32,6 @@ abstract class Bin {
       this.eventEmitter.on('stderr:data', v => stderrMessages.push(v));
       this.eventEmitter.on('stdout:data', v => stdoutMessages.push(v));
       this.eventEmitter.on('close', (code) => {
-        console.log(stderrMessages, stdoutMessages);
         if (stderrMessages.length) {
           const BinError = ErrorFactory.matchError(stderrMessages);
           rej(BinError);
